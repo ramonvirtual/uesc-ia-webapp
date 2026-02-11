@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UESCCIC - Assistente Acadêmico</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo-area">
+    <img src="LOGO-CIC.png" class="logo">
+    <div>
+      <h1>UESCCIC</h1>
+      <p>Assistente Acadêmico Inteligente</p>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="chat-card">
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <!-- Mascote dentro do chat -->
+    <div id="mascote">
+      <div class="mascote-container">
+        <img src="mascote.png" alt="Mascote UescCIC">
+        <div class="boca"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="input-container">
+
+    <button id="voice-toggle" onclick="toggleVoice()">🔊 Voz ON</button>
+
+    <input type="text" id="user-input" placeholder="Digite sua pergunta acadêmica..." />
+
+    <button onclick="sendMessage()">Enviar</button>
+
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

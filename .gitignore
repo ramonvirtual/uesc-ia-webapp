@@ -1,0 +1,16 @@
+# Dependências
+node_modules/
+vendor/
+
+# Arquivos sensíveis
+.env
+config.php
+config.inc.php
+database.php
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
