@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acesso Administrativo - UescCIC</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins', sans-serif;
+}
+
+body{
+  background: linear-gradient(135deg,#0f2b66,#1f4ea8);
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.container{
+  background:#ffffff;
+  width:100%;
+  max-width:420px;
+  padding:40px;
+  border-radius:18px;
+  box-shadow:0 20px 45px rgba(0,0,0,0.3);
+  text-align:center;
+  position:relative;
+}
+
+.logo-area{
+  margin-bottom:25px;
+}
+
+.logo-area img{
+  width:90px;
+  margin-bottom:10px;
+}
+
+.logo-area h2{
+  font-size:18px;
+  color:#1f4ea8;
+  font-weight:600;
+}
+
+.logo-area p{
+  font-size:13px;
+  color:#666;
+}
+
+form{
+  margin-top:25px;
+  display:flex;
+  flex-direction:column;
+}
+
+.input-group{
+  margin-bottom:18px;
+  text-align:left;
+}
+
+.input-group label{
+  font-size:13px;
+  color:#444;
+  margin-bottom:6px;
+  display:block;
+}
+
+.input-group input{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  outline:none;
+  transition:0.3s;
+}
+
+.input-group input:focus{
+  border-color:#1f4ea8;
+  box-shadow:0 0 0 2px rgba(31,78,168,0.2);
+}
+
+button{
+  margin-top:10px;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#ffd200;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  background:#ffbf00;
+}
+
+.message{
+  margin-top:15px;
+  font-size:13px;
+}
+
+.error{
+  color:red;
+}
+
+.loading{
+  color:#1f4ea8;
+}
+
+.footer{
+  margin-top:20px;
+  font-size:11px;
+  color:#777;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="logo-area">
+    <!-- Substitua pelo caminho correto da sua logo -->
+    <img src="LOGO-CIC.png" alt="Logo UescCIC">
+    <h2>Painel Administrativo</h2>
+    <p>Acesso restrito • Sistema Inteligente UescCIC</p>
+  </div>
+
+  <form id="loginForm">
+
+    <div class="input-group">
+      <label>Email Institucional</label>
+      <input type="email" id="email" placeholder="admin@uesc.br" required>
+    </div>
+
+    <div class="input-group">
+      <label>Senha</label>
+      <input type="password" id="senha" placeholder="••••••••" required>
+    </div>
+
+    <button type="submit">🔐 Entrar no Sistema</button>
+
+    <div class="message" id="msg"></div>
+
+  </form>
+
+  <div class="footer">
+    © 2026 UescCIC • Plataforma Inteligente Acadêmica
+  </div>
+
+</div>
+
+<script>
+
+document.getElementById("loginForm").addEventListener("submit", async function(e){
+
+e.preventDefault();
+
+const email = document.getElementById("email").value;
+const senha = document.getElementById("senha").value;
+const msg = document.getElementById("msg");
+
+msg.innerHTML = "🔄 Verificando credenciais...";
+msg.className = "message loading";
+
+try{
+
+const response = await fetch("/login",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({email,senha})
+});
+
+const data = await response.json();
+
+if(data.status){
+  msg.innerHTML = "✅ Acesso autorizado! Redirecionando...";
+  msg.className = "message loading";
+
+  setTimeout(()=>{
+    window.location.href = "/admin.html";
+  },1500);
+
+}else{
+  msg.innerHTML = "❌ " + data.error;
+  msg.className = "message error";
+}
+
+}catch(error){
+  msg.innerHTML = "⚠️ Erro de conexão com o servidor.";
+  msg.className = "message error";
+}
+
+});
+
+</script>
+
+</body>
+</html>

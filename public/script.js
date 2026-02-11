@@ -1,13 +1,14 @@
 /* =====================================================
-   VARIÁVEIS
+   VARIÁVEIS GLOBAIS
 ===================================================== */
 
 let voices = [];
 let voiceEnabled = true;
 let femaleVoice = null;
 
+
 /* =====================================================
-   CARREGAR VOZ FEMININA GOOGLE
+   CARREGAR VOZ FEMININA (GOOGLE PRIORIDADE)
 ===================================================== */
 
 function loadVoices() {
@@ -51,7 +52,7 @@ function toggleVoice() {
 
 
 /* =====================================================
-   FUNÇÃO FALAR COM EXPRESSÃO
+   FALAR COM EXPRESSÃO
 ===================================================== */
 
 function falar(texto) {
@@ -70,7 +71,7 @@ function falar(texto) {
 
     utterance.voice = femaleVoice;
     utterance.lang = "pt-BR";
-    utterance.rate = 0.92; // tom mais formal
+    utterance.rate = 0.92; // tom institucional
     utterance.pitch = 1;
 
     utterance.onstart = () => {
@@ -88,11 +89,7 @@ function falar(texto) {
 
 
 /* =====================================================
-   MENSAGEM INICIAL FORMAL
-===================================================== */
-
-/* =====================================================
-   MENSAGEM INICIAL RESUMIDA E INTERATIVA
+   MENSAGEM INICIAL INSTITUCIONAL
 ===================================================== */
 
 window.onload = function () {
@@ -100,14 +97,13 @@ window.onload = function () {
   const chatBox = document.getElementById("chat-box");
 
   const mensagem = `
-  👋 <strong>Bem-vindo(a) ao Assistente Virtual UescCIC</strong> 🤖<br><br>
+  👋 <strong>Bem-vindo(a) ao Assistente Virtual UescCIC</strong><br><br>
 
-  🎓 Posso auxiliar com:<br>
-  📚 Orientações acadêmicas<br>
-  📄 Informações institucionais<br>
-  💻 Suporte ao Curso de Ciência da Computação<br><br>
+  🎓 Informações acadêmicas<br>
+  📚 Normas institucionais<br>
+  🖥️ Orientações do Curso<br><br>
 
-  ✨ Em que posso ajudá-lo(a) neste momento?
+  ✨ Faça sua pergunta para começar.
   `;
 
   chatBox.innerHTML += `<div class="message bot">${mensagem}</div>`;
@@ -117,8 +113,9 @@ window.onload = function () {
   }, 600);
 };
 
+
 /* =====================================================
-   ENVIO DA MENSAGEM
+   ENVIO DA MENSAGEM (COM SUPORTE A RAG)
 ===================================================== */
 
 async function sendMessage() {
@@ -134,7 +131,7 @@ async function sendMessage() {
 
   const typing = document.createElement("div");
   typing.className = "message bot";
-  typing.innerHTML = "⌛ Digitando...";
+  typing.innerHTML = "⌛ Analisando informações...";
   chatBox.appendChild(typing);
 
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -155,7 +152,27 @@ async function sendMessage() {
     const resposta = data.reply || 
       "Não foi possível localizar a informação solicitada no momento.";
 
-    chatBox.innerHTML += `<div class="message bot">${resposta}</div>`;
+    let badge = "";
+
+    // 🧠 IDENTIFICA FONTE DA RESPOSTA
+    if (data.fonte === "FAQ") {
+      badge = "📌 <em>Resposta da base institucional</em><br><br>";
+    }
+
+    if (data.fonte === "RAG") {
+      badge = "📚 <em>Baseado em documento institucional</em><br><br>";
+    }
+
+    if (data.fonte === "IA") {
+      badge = "🤖 <em>Resposta assistida por IA</em><br><br>";
+    }
+
+    chatBox.innerHTML += `
+      <div class="message bot">
+        ${badge}
+        ${resposta}
+      </div>
+    `;
 
     falar(resposta);
 

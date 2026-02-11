@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo - UescCIC</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{
+  background:linear-gradient(135deg,#0f2b66,#1f4ea8);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.card{
+  background:#fff;
+  width:100%;
+  max-width:650px;
+  padding:35px;
+  border-radius:18px;
+  box-shadow:0 15px 40px rgba(0,0,0,0.3);
+}
+h2{color:#1f4ea8;margin-bottom:10px;}
+p{color:#555;font-size:14px;margin-bottom:25px;}
+
+.upload-area{
+  border:2px dashed #1f4ea8;
+  border-radius:15px;
+  padding:25px;
+  cursor:pointer;
+  text-align:center;
+}
+.upload-area:hover{background:#f4f7ff;}
+
+input[type="file"]{display:none;}
+
+button{
+  margin-top:15px;
+  padding:10px 18px;
+  border:none;
+  border-radius:10px;
+  background:#ffd200;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.progress{
+  margin-top:15px;
+  height:8px;
+  background:#eee;
+  border-radius:8px;
+  overflow:hidden;
+  display:none;
+}
+.bar{
+  height:100%;
+  width:0%;
+  background:#1f4ea8;
+  transition:0.4s;
+}
+
+.status{
+  margin-top:15px;
+  font-size:14px;
+}
+
+.success{color:green;}
+.error{color:red;}
+.loading{color:#1f4ea8;}
+
+.lista{
+  margin-top:25px;
+}
+.lista h3{
+  margin-bottom:10px;
+  color:#1f4ea8;
+}
+.item{
+  background:#f4f7ff;
+  padding:10px;
+  border-radius:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+.item button{
+  background:#ff4d4d;
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>📄 Painel Administrativo UescCIC</h2>
+<p>Sincronize documentos institucionais e gerencie a base RAG.</p>
+
+<form id="uploadForm">
+
+<label class="upload-area">
+📎 Selecionar PDF
+<input type="file" name="arquivo" accept="application/pdf" required>
+</label>
+
+<button type="submit">🚀 Sincronizar Documento</button>
+
+<div class="progress" id="progress">
+  <div class="bar" id="bar"></div>
+</div>
+
+<div class="status" id="status"></div>
+
+</form>
+
+<div class="lista">
+  <h3>📚 Documentos Sincronizados</h3>
+  <div id="documentList"></div>
+</div>
+
+</div>
+
+<script>
+/* =====================
+   VERIFICAR LOGIN AO CARREGAR
+===================== */
+
+window.addEventListener("load", async () => {
+
+  const response = await fetch("/verificar-auth");
+
+  if (!response.ok) {
+    window.location.href = "/login.html";
+  }
+
+});
+
+const form = document.getElementById("uploadForm");
+const progress = document.getElementById("progress");
+const bar = document.getElementById("bar");
+const status = document.getElementById("status");
+const list = document.getElementById("documentList");
+
+/* =====================
+   CARREGAR LISTA
+===================== */
+async function carregarDocumentos(){
+  const res = await fetch("/documentos");
+  const docs = await res.json();
+
+  list.innerHTML = "";
+
+  docs.forEach(doc=>{
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <span>${doc.titulo}</span>
+      <button onclick="deletar('${doc.titulo}')">🗑️</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+/* =====================
+   DELETAR
+===================== */
+async function deletar(titulo){
+
+  if(!confirm("Deseja remover este documento?")) return;
+
+  await fetch("/documentos/"+titulo,{
+    method:"DELETE"
+  });
+
+  carregarDocumentos();
+}
+
+/* =====================
+   UPLOAD
+===================== */
+form.addEventListener("submit", async function(e){
+
+  e.preventDefault();
+
+  const formData = new FormData(this);
+
+  progress.style.display="block";
+  bar.style.width="15%";
+  status.innerHTML="🔄 Sincronizando documento...";
+  status.className="status loading";
+
+  let fake = setInterval(()=>{
+    let largura=parseInt(bar.style.width);
+    if(largura<85){
+      bar.style.width=(largura+10)+"%";
+    }
+  },400);
+
+  try{
+
+    const response = await fetch("/upload-pdf",{
+      method:"POST",
+      body:formData
+    });
+
+    const data = await response.json();
+
+    clearInterval(fake);
+    bar.style.width="100%";
+
+    if(data.status){
+
+      status.innerHTML="✅ Sincronização concluída com sucesso!";
+      status.className="status success";
+
+      setTimeout(()=>{
+        bar.style.width="0%";
+        progress.style.display="none";
+        status.innerHTML="";
+        form.reset();
+        carregarDocumentos(); // Atualiza lista
+      },2000);
+
+    }else{
+      status.innerHTML="⚠️ Erro ao processar documento.";
+      status.className="status error";
+    }
+
+  }catch(error){
+    clearInterval(fake);
+    status.innerHTML="❌ Falha na comunicação com o servidor.";
+    status.className="status error";
+  }
+
+});
+
+/* INICIALIZA */
+carregarDocumentos();
+
+</script>
+
+</body>
+</html>
