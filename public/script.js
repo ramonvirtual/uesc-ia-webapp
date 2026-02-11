@@ -113,7 +113,7 @@ window.onload = function () {
   chatBox.innerHTML += `<div class="message bot">${mensagem}</div>`;
 
   setTimeout(() => {
-    falar("Bem-vindo ao Assistente Virtual UescCIC. Estou pronta para auxiliá-lo com informações acadêmicas e institucionais.");
+    falar("Bem-vindo ao Assistente Virtual UescCIC. Estou pronto para auxiliá-lo com informações acadêmicas e institucionais.");
   }, 600);
 };
 
