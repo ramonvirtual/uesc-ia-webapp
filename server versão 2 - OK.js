@@ -29,7 +29,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // usar true apenas em HTTPS
+    secure: false,
     sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 4
   }
@@ -117,11 +117,7 @@ function autenticar(req, res, next) {
 
 app.post("/login", async (req, res) => {
   try {
-
     const { email, senha } = req.body;
-
-    if (!email || !senha)
-      return res.status(400).json({ error: "Credenciais inválidas." });
 
     const [rows] = await db.execute(
       "SELECT * FROM usuarios WHERE email = ? LIMIT 1",
@@ -155,42 +151,6 @@ app.get("/verificar-auth", (req, res) => {
     return res.json({ autorizado: true });
 
   return res.status(401).json({ autorizado: false });
-});
-
-/* =====================================================
-   REGISTRAR DÚVIDA
-===================================================== */
-
-app.post("/registrar-duvida", async (req, res) => {
-
-  try {
-
-    const { nome, matricula, email, pergunta } = req.body;
-
-    if (!nome || !matricula || !email || !pergunta) {
-      return res.status(400).json({
-        error: "Todos os campos são obrigatórios."
-      });
-    }
-
-    await db.execute(
-      "INSERT INTO duvidas (nome, matricula, email, pergunta) VALUES (?, ?, ?, ?)",
-      [nome, matricula, email, pergunta]
-    );
-
-    console.log("📩 Nova dúvida registrada:", nome);
-
-    return res.json({ status: true });
-
-  } catch (error) {
-
-    console.error("🔥 ERRO AO REGISTRAR DÚVIDA:", error);
-
-    return res.status(500).json({
-      error: "Erro interno ao registrar dúvida."
-    });
-  }
-
 });
 
 /* =====================================================
@@ -265,7 +225,10 @@ app.post("/chat", async (req, res) => {
     const perguntaNormalizada = normalizar(message);
     const palavraChave = extrairPalavraChave(message);
 
-    /* 1️⃣ FAQ EXATO */
+    /* =====================
+       1️⃣ FAQ EXATO
+    ===================== */
+
     const [faqRows] = await db.execute("SELECT pergunta, resposta FROM faq");
 
     for (let item of faqRows) {
@@ -274,7 +237,10 @@ app.post("/chat", async (req, res) => {
       }
     }
 
-    /* 2️⃣ FAQ APROXIMADO */
+    /* =====================
+       2️⃣ FAQ APROXIMADO
+    ===================== */
+
     let melhorFAQ = null;
     let melhorScore = 0;
 
@@ -290,7 +256,10 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: melhorFAQ.resposta, fonte: "FAQ" });
     }
 
-    /* 3️⃣ BUSCA TEXTUAL */
+    /* =====================
+       3️⃣ BUSCA TEXTUAL
+    ===================== */
+
     const [matchTexto] = await db.execute(
       "SELECT chunk FROM documentos WHERE LOWER(chunk) LIKE ? LIMIT 5",
       [`%${palavraChave}%`]
@@ -323,6 +292,7 @@ Resposta institucional clara e objetiva:
 
       } catch {
 
+        // fallback sem GPT
         return res.json({
           reply: contexto.substring(0, 1200),
           fonte: "RAG"
@@ -330,7 +300,63 @@ Resposta institucional clara e objetiva:
       }
     }
 
-    /* 4️⃣ FALLBACK */
+    /* =====================
+       4️⃣ RAG SEMÂNTICO
+    ===================== */
+
+    const embeddingPergunta = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: message
+    });
+
+    const vetorPergunta = embeddingPergunta.data[0].embedding;
+
+    const [docs] = await db.execute(
+      "SELECT chunk, embedding FROM documentos WHERE embedding IS NOT NULL"
+    );
+
+    let melhores = [];
+
+    for (let doc of docs) {
+
+      const vetorDoc = JSON.parse(doc.embedding);
+      const score = cosineSimilarity(vetorPergunta, vetorDoc);
+
+      melhores.push({ chunk: doc.chunk, score });
+    }
+
+    melhores.sort((a,b)=>b.score-a.score);
+
+    if (melhores.length && melhores[0].score >= 0.55) {
+
+      const topContexto = melhores.slice(0,3)
+        .map(m=>m.chunk)
+        .join("\n\n");
+
+      const respostaIA = await openai.responses.create({
+        model: "gpt-4.1-mini",
+        input: `
+Baseado exclusivamente no conteúdo abaixo:
+
+${topContexto}
+
+Pergunta:
+${message}
+
+Resposta institucional objetiva:
+`
+      });
+
+      return res.json({
+        reply: respostaIA.output_text,
+        fonte: "RAG"
+      });
+    }
+
+    /* =====================
+       5️⃣ FALLBACK
+    ===================== */
+
     return res.json({
       reply: `
 🏛️ <strong>Consulta Institucional Oficial</strong><br><br>
@@ -359,45 +385,4 @@ Resposta institucional clara e objetiva:
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-});
-
-/* =====================================================
-   ADMIN – LISTAR DÚVIDAS
-===================================================== */
-
-app.get("/admin/duvidas", autenticar, async (req, res) => {
-
-  try {
-
-    const [rows] = await db.execute(
-      "SELECT id, nome, matricula, email, pergunta, data_envio FROM duvidas ORDER BY id DESC"
-    );
-
-    res.json(rows);
-
-  } catch (error) {
-    console.error("🔥 ERRO LISTAR DÚVIDAS:", error);
-    res.status(500).json({ error: "Erro ao buscar dúvidas." });
-  }
-});
-
-/* =====================================================
-   ADMIN – EXCLUIR DÚVIDA
-===================================================== */
-
-app.delete("/admin/duvidas/:id", autenticar, async (req, res) => {
-
-  try {
-
-    await db.execute(
-      "DELETE FROM duvidas WHERE id = ?",
-      [req.params.id]
-    );
-
-    res.json({ status: true });
-
-  } catch (error) {
-    console.error("🔥 ERRO EXCLUIR DÚVIDA:", error);
-    res.status(500).json({ error: "Erro ao excluir dúvida." });
-  }
 });

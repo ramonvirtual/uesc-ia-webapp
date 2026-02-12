@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-
 *{
   margin:0;
   padding:0;
@@ -32,7 +31,6 @@ body{
   border-radius:18px;
   box-shadow:0 20px 45px rgba(0,0,0,0.3);
   text-align:center;
-  position:relative;
 }
 
 .logo-area{
@@ -111,6 +109,10 @@ button:hover{
   color:red;
 }
 
+.success{
+  color:green;
+}
+
 .loading{
   color:#1f4ea8;
 }
@@ -120,7 +122,6 @@ button:hover{
   font-size:11px;
   color:#777;
 }
-
 </style>
 </head>
 
@@ -129,7 +130,6 @@ button:hover{
 <div class="container">
 
   <div class="logo-area">
-    <!-- Substitua pelo caminho correto da sua logo -->
     <img src="LOGO-CIC.png" alt="Logo UescCIC">
     <h2>Painel Administrativo</h2>
     <p>Acesso restrito • Sistema Inteligente UescCIC</p>
@@ -163,42 +163,48 @@ button:hover{
 
 document.getElementById("loginForm").addEventListener("submit", async function(e){
 
-e.preventDefault();
+  e.preventDefault();
 
-const email = document.getElementById("email").value;
-const senha = document.getElementById("senha").value;
-const msg = document.getElementById("msg");
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
+  const msg = document.getElementById("msg");
 
-msg.innerHTML = "🔄 Verificando credenciais...";
-msg.className = "message loading";
-
-try{
-
-const response = await fetch("/login",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({email,senha})
-});
-
-const data = await response.json();
-
-if(data.status){
-  msg.innerHTML = "✅ Acesso autorizado! Redirecionando...";
+  msg.innerHTML = "🔄 Verificando credenciais...";
   msg.className = "message loading";
 
-  setTimeout(()=>{
-    window.location.href = "/admin.html";
-  },1500);
+  try{
 
-}else{
-  msg.innerHTML = "❌ " + data.error;
-  msg.className = "message error";
-}
+    const response = await fetch("/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      credentials: "include",  // 🔥 ESSENCIAL PARA MANTER SESSÃO
+      body:JSON.stringify({email,senha})
+    });
 
-}catch(error){
-  msg.innerHTML = "⚠️ Erro de conexão com o servidor.";
-  msg.className = "message error";
-}
+    const data = await response.json();
+
+    if(response.ok && data.status){
+
+      msg.innerHTML = "✅ Acesso autorizado! Redirecionando...";
+      msg.className = "message success";
+
+      setTimeout(()=>{
+        window.location.href = "/painel/";
+      },800);
+
+    }else{
+
+      msg.innerHTML = "❌ " + (data.error || "Credenciais inválidas.");
+      msg.className = "message error";
+
+    }
+
+  }catch(error){
+
+    msg.innerHTML = "⚠️ Erro de conexão com o servidor.";
+    msg.className = "message error";
+
+  }
 
 });
 

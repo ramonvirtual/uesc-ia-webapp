@@ -24,15 +24,13 @@ body{
   align-items:center;
 }
 
-/* ================= CARD ================= */
-
 .card{
   background:#fff;
   width:100%;
-  max-width:750px;
-  padding:40px;
-  border-radius:20px;
-  box-shadow:0 20px 50px rgba(0,0,0,0.35);
+  max-width:780px;
+  padding:45px;
+  border-radius:22px;
+  box-shadow:0 25px 60px rgba(0,0,0,0.35);
 }
 
 h2{
@@ -44,158 +42,169 @@ h2{
 p{
   color:#666;
   font-size:14px;
-  margin-bottom:30px;
+  margin-bottom:35px;
 }
 
-/* ================= UPLOAD BOX ================= */
-
-.upload-wrapper{
-  display:flex;
-  flex-direction:column;
-  gap:15px;
-}
+/* ================= NOVA CAIXA DE SELEÇÃO ================= */
 
 .upload-area{
   border:2px dashed #1f4ea8;
-  border-radius:14px;
-  padding:25px;
+  border-radius:16px;
+  padding:35px 25px;
   text-align:center;
   cursor:pointer;
   transition:0.3s;
-  background:#f9fbff;
+  background:#f8fbff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
 }
 
 .upload-area:hover{
-  background:#eef3ff;
-  transform:scale(1.01);
+  background:#eef4ff;
+  transform:translateY(-2px);
 }
 
-.upload-area strong{
-  color:#1f4ea8;
+.upload-icon{
+  font-size:40px;
+}
+
+.upload-title{
   font-weight:600;
+  color:#1f4ea8;
+  font-size:16px;
+}
+
+.upload-sub{
+  font-size:13px;
+  color:#666;
 }
 
 input[type="file"]{
   display:none;
 }
 
-/* ================= FILE INFO ================= */
+/* ================= PREVIEW MODERNO ================= */
 
 .file-preview{
   display:none;
+  margin-top:18px;
+  padding:15px 18px;
+  background:#f1f5ff;
+  border-radius:12px;
+  border:1px solid #d8e2ff;
+  font-size:14px;
+  display:flex;
   align-items:center;
   justify-content:space-between;
-  background:#eef3ff;
-  padding:12px 15px;
-  border-radius:10px;
-  font-size:13px;
-  border:1px solid #cdd9ff;
+  gap:10px;
 }
 
-.file-preview span{
+.file-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  overflow:hidden;
+}
+
+.file-name{
   color:#1f4ea8;
   font-weight:500;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:400px;
 }
 
-.file-preview button{
+.remove-btn{
   background:#ff4d4d;
   border:none;
   color:white;
-  padding:5px 10px;
-  border-radius:6px;
+  padding:6px 12px;
+  border-radius:8px;
   cursor:pointer;
   font-size:12px;
 }
 
-/* ================= BUTTON ================= */
+/* ================= BOTÃO ================= */
 
 button.primary{
-  margin-top:10px;
-  padding:12px;
+  margin-top:20px;
+  padding:14px;
   border:none;
-  border-radius:12px;
+  border-radius:14px;
   background:#ffd200;
   font-weight:600;
   cursor:pointer;
   transition:0.3s;
-}
-
-button.primary:hover{
-  background:#ffbf00;
-}
-
-/* ================= PROGRESS ================= */
-
-.progress{
-  margin-top:20px;
-  height:8px;
-  background:#eee;
-  border-radius:8px;
-  overflow:hidden;
-  display:none;
-}
-
-.bar{
-  height:100%;
-  width:0%;
-  background:#1f4ea8;
-  transition:0.4s;
-}
-
-/* ================= STATUS ================= */
-
-.status{
-  margin-top:12px;
   font-size:14px;
 }
+
+button.primary:disabled{
+  background:#ccc;
+  cursor:not-allowed;
+}
+
+/* ================= PROCESSO ================= */
+
+.process-box{
+  margin-top:25px;
+  display:none;
+  background:#f4f7ff;
+  padding:18px;
+  border-radius:14px;
+  border:1px solid #d9e2ff;
+}
+
+.step{
+  font-size:13px;
+  margin-bottom:8px;
+  opacity:0.5;
+}
+
+.step.active{
+  opacity:1;
+  font-weight:600;
+  color:#1f4ea8;
+}
+
+.step.done{
+  opacity:1;
+  color:#2e7d32;
+}
+
+/* ================= SUCCESS ================= */
 
 .success-box{
-  margin-top:15px;
-  padding:12px;
+  margin-top:18px;
+  padding:15px;
   background:#e6ffe6;
   border:1px solid #2e7d32;
-  border-radius:10px;
+  border-radius:12px;
   display:none;
   font-size:14px;
+  font-weight:500;
 }
 
 /* ================= LISTA ================= */
 
 .lista{
-  margin-top:35px;
+  margin-top:40px;
 }
 
 .lista h3{
-  margin-bottom:10px;
+  margin-bottom:12px;
   color:#1f4ea8;
 }
 
 .item{
   background:#f4f7ff;
-  padding:10px 12px;
-  border-radius:8px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  padding:12px 14px;
+  border-radius:10px;
   margin-bottom:8px;
   font-size:13px;
-}
-
-.item button{
-  background:#ff4d4d;
-  color:white;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-/* ================= RESPONSIVO ================= */
-
-@media(max-width:600px){
-  .card{
-    padding:25px;
-  }
 }
 
 </style>
@@ -205,39 +214,44 @@ button.primary:hover{
 
 <div class="card">
 
-<h2>📄 Painel Administrativo UescCIC</h2>
-<p>Sincronize documentos institucionais e gerencie a base RAG oficial.</p>
+<h2>📄 Plataforma de Indexação Inteligente Institucional</h2>
+<p>Sincronização Inteligente da Base Institucional (RAG + IA)</p>
 
 <form id="uploadForm">
 
-<div class="upload-wrapper">
-
 <label class="upload-area">
-📎 <strong>Selecionar Documento PDF</strong><br>
-<small>Clique para escolher o arquivo institucional</small>
-<input type="file" id="fileInput" name="arquivo" accept="application/pdf" required>
+  <div class="upload-icon">📄</div>
+  <div class="upload-title">Selecionar Documento PDF</div>
+  <div class="upload-sub">Clique para escolher o arquivo institucional</div>
+  <input type="file" id="fileInput" name="arquivo" accept="application/pdf" required>
 </label>
 
 <div class="file-preview" id="filePreview">
-  <span id="fileName"></span>
-  <button type="button" onclick="removerArquivo()">Remover</button>
+  <div class="file-left">
+    📂 <span class="file-name" id="fileName"></span>
+  </div>
+  <button type="button" class="remove-btn" onclick="removerArquivo()">Remover</button>
 </div>
 
-<button class="primary" type="submit">🚀 Sincronizar Documento</button>
-
-</div>
-
-<div class="progress" id="progress">
-  <div class="bar" id="bar"></div>
-</div>
-
-<div class="status" id="status"></div>
-
-<div class="success-box" id="successBox">
-✅ Documento sincronizado com sucesso na base institucional!
-</div>
+<button class="primary" id="btnEnviar" type="submit">
+🚀 Iniciar Sincronização
+</button>
 
 </form>
+
+<!-- PROCESSO VISUAL -->
+<div class="process-box" id="processBox">
+  <div class="step" id="step1">1️⃣ Preparando documento...</div>
+  <div class="step" id="step2">2️⃣ Processando conteúdo PDF...</div>
+  <div class="step" id="step3">3️⃣ Gerando embeddings com IA...</div>
+  <div class="step" id="step4">4️⃣ Salvando na base institucional...</div>
+</div>
+
+<div class="success-box" id="successBox">
+✅ Documento sincronizado com sucesso!
+<br><br>
+A base institucional foi atualizada.
+</div>
 
 <div class="lista">
   <h3>📚 Documentos Sincronizados</h3>
@@ -248,118 +262,108 @@ button.primary:hover{
 
 <script>
 
-/* ================= LOGIN CHECK ================= */
-
+/* LOGIN CHECK */
 window.addEventListener("load", async () => {
-  const response = await fetch("/verificar-auth");
-  if (!response.ok) {
-    window.location.href = "/login.html";
+  try{
+    const response = await fetch("/verificar-auth",{credentials:"include"});
+    if(!response.ok){
+      window.location.href="/login.html";
+    }
+  }catch{
+    window.location.href="/login.html";
   }
 });
-
-/* ================= ELEMENTOS ================= */
 
 const fileInput = document.getElementById("fileInput");
 const filePreview = document.getElementById("filePreview");
 const fileName = document.getElementById("fileName");
 const form = document.getElementById("uploadForm");
-const progress = document.getElementById("progress");
-const bar = document.getElementById("bar");
-const status = document.getElementById("status");
+const btnEnviar = document.getElementById("btnEnviar");
+const processBox = document.getElementById("processBox");
 const successBox = document.getElementById("successBox");
-const list = document.getElementById("documentList");
-
-/* ================= MOSTRAR ARQUIVO ================= */
 
 fileInput.addEventListener("change", function(){
   if(this.files.length > 0){
-    fileName.innerHTML = "📂 " + this.files[0].name;
-    filePreview.style.display = "flex";
+    fileName.textContent = this.files[0].name;
+    filePreview.style.display="flex";
   }
 });
 
 function removerArquivo(){
-  fileInput.value = "";
-  filePreview.style.display = "none";
+  fileInput.value="";
+  filePreview.style.display="none";
 }
 
-/* ================= CARREGAR DOCUMENTOS ================= */
-
-async function carregarDocumentos(){
-  const res = await fetch("/documentos");
-  const docs = await res.json();
-
-  list.innerHTML = "";
-
-  docs.forEach(doc=>{
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <span>${doc.titulo}</span>
-      <button onclick="deletar('${doc.titulo}')">🗑️</button>
-    `;
-    list.appendChild(div);
-  });
+function ativarStep(step){
+  document.getElementById(step).classList.add("active");
 }
 
-/* ================= UPLOAD ================= */
+function concluirStep(step){
+  const el=document.getElementById(step);
+  el.classList.remove("active");
+  el.classList.add("done");
+}
 
 form.addEventListener("submit", async function(e){
 
   e.preventDefault();
+  if(!fileInput.files.length) return;
 
-  successBox.style.display = "none";
+  btnEnviar.disabled=true;
+  successBox.style.display="none";
+  processBox.style.display="block";
 
-  const formData = new FormData(this);
+  ativarStep("step1");
+  setTimeout(()=>concluirStep("step1"),600);
+  setTimeout(()=>ativarStep("step2"),700);
+  setTimeout(()=>concluirStep("step2"),1500);
+  setTimeout(()=>ativarStep("step3"),1600);
+  setTimeout(()=>concluirStep("step3"),2500);
+  setTimeout(()=>ativarStep("step4"),2600);
 
-  progress.style.display="block";
-  bar.style.width="10%";
-  status.innerHTML="🔄 Processando documento institucional...";
-
-  let fake = setInterval(()=>{
-    let largura=parseInt(bar.style.width);
-    if(largura<90){
-      bar.style.width=(largura+5)+"%";
-    }
-  },300);
+  const formData=new FormData(this);
 
   try{
-
-    const response = await fetch("/upload-pdf",{
+    const response=await fetch("/upload-pdf",{
       method:"POST",
-      body:formData
+      body:formData,
+      credentials:"include"
     });
 
-    const data = await response.json();
+    const data=await response.json();
 
-    clearInterval(fake);
-    bar.style.width="100%";
+    concluirStep("step4");
 
     if(data.status){
-
-      status.innerHTML="";
-      successBox.style.display="block";
-
       setTimeout(()=>{
-        progress.style.display="none";
-        bar.style.width="0%";
+        successBox.style.display="block";
         form.reset();
         filePreview.style.display="none";
-        carregarDocumentos();
-      },1500);
-
-    }else{
-      status.innerHTML="⚠️ Erro ao processar documento.";
+        btnEnviar.disabled=false;
+        processBox.style.display="none";
+      },600);
     }
 
-  }catch(error){
-    clearInterval(fake);
-    status.innerHTML="❌ Falha na comunicação com o servidor.";
+  }catch{
+    btnEnviar.disabled=false;
+    processBox.style.display="none";
   }
 
 });
 
-/* ================= INIT ================= */
+async function carregarDocumentos(){
+  const res=await fetch("/documentos",{credentials:"include"});
+  if(!res.ok) return;
+  const docs=await res.json();
+  const list=document.getElementById("documentList");
+  list.innerHTML="";
+  docs.forEach(doc=>{
+    const div=document.createElement("div");
+    div.className="item";
+    div.innerHTML="📄 "+doc.titulo;
+    list.appendChild(div);
+  });
+}
 
 carregarDocumentos();
 

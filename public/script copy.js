@@ -6,10 +6,6 @@ let voices = [];
 let voiceEnabled = true;
 let femaleVoice = null;
 
-let etapaAtendimento = 1;
-let nomeAluno = "";
-let matriculaAluno = "";
-
 /* =====================================================
    CARREGAR VOZ
 ===================================================== */
@@ -26,6 +22,8 @@ function loadVoices() {
   if (!femaleVoice) {
     femaleVoice = voices.find(v => v.lang === "pt-BR");
   }
+
+  console.log("🎙️ Voz selecionada:", femaleVoice?.name);
 }
 
 speechSynthesis.onvoiceschanged = loadVoices;
@@ -81,7 +79,11 @@ function falar(texto) {
 }
 
 /* =====================================================
-   ETAPA 1 – BOAS-VINDAS
+   MENSAGEM INICIAL
+===================================================== */
+
+/* =====================================================
+   EXPERIÊNCIA INICIAL – ASSISTENTE VIRTUAL PROFISSIONAL
 ===================================================== */
 
 window.onload = function () {
@@ -90,19 +92,49 @@ window.onload = function () {
 
   chatBox.innerHTML += `
     <div class="message bot">
+
       <strong>👋 Olá! Seja bem-vindo(a) ao Assistente Virtual UescCIC</strong>
       <br><br>
+
       🎓 Sou o assistente institucional oficial do Curso de Ciência da Computação da UESC.
       <br><br>
-      📌 Para iniciarmos, qual é o seu <strong>nome completo</strong>?
+
+      📌 Antes de iniciarmos, poderia me informar:
+      <br>
+      • Seu nome completo<br>
+      • Sua matrícula acadêmica
+      <br><br>
+
+      📚 <strong>Posso ajudar você com:</strong>
+      <br>
+      • Informações sobre CONSU, CONSEPE, COLCIC<br>
+      • Estatuto e Regimento da UESC<br>
+      • Normas acadêmicas oficiais<br>
+      • Composição de Conselhos<br>
+      • Estrutura institucional<br>
+      • Informações institucionais do curso
+      <br><br>
+
+      💡 <strong>Exemplos de perguntas:</strong>
+      <br>
+      • O que é o CONSU?<br>
+      • Qual a composição do Conselho Superior?<br>
+      • O que é o Regimento da UESC?<br>
+      • Qual o site do COLCIC?
+      <br><br>
+
+      ✨ <strong>Como posso te ajudar hoje?</strong>
+
     </div>
   `;
 
-  falar("Olá! Seja bem-vindo ao Assistente Virtual UescCIC. Qual é o seu nome completo?");
+  setTimeout(() => {
+    falar("Olá! Eu sou o Assistente Virtual Institucional UescCIC. Informe seu nome e matrícula para iniciarmos o atendimento.");
+  }, 800);
 };
 
 /* =====================================================
-   ENVIO DE MENSAGEM
+   ENVIO DA PERGUNTA
 ===================================================== */
 
 async function sendMessage() {
@@ -115,60 +147,6 @@ async function sendMessage() {
 
   chatBox.innerHTML += `<div class="message user">${message}</div>`;
   input.value = "";
-
-  /* ============================
-     ETAPA 1 → CAPTURA NOME
-  ============================ */
-
-  if (etapaAtendimento === 1) {
-
-    nomeAluno = message;
-    etapaAtendimento = 2;
-
-    chatBox.innerHTML += `
-      <div class="message bot">
-        Prazer, <strong>${nomeAluno}</strong>! 😊<br><br>
-        📌 Agora informe sua <strong>matrícula acadêmica</strong>.
-      </div>
-    `;
-
-    falar(`Prazer ${nomeAluno}. Agora informe sua matrícula acadêmica.`);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    return;
-  }
-
-  /* ============================
-     ETAPA 2 → CAPTURA MATRÍCULA
-  ============================ */
-
-  if (etapaAtendimento === 2) {
-
-    matriculaAluno = message;
-    etapaAtendimento = 3;
-
-    chatBox.innerHTML += `
-      <div class="message bot">
-        ✅ Atendimento iniciado com sucesso!<br><br>
-
-        📚 Posso ajudar você com:
-        <br>
-        • CONSU, CONSEPE, COLCIC<br>
-        • Estatuto e Regimento da UESC<br>
-        • Normas acadêmicas oficiais<br>
-        • Estrutura institucional<br><br>
-
-        ✨ <strong>Qual é a sua dúvida?</strong>
-      </div>
-    `;
-
-    falar("Atendimento iniciado com sucesso. Como posso ajudar você hoje?");
-    chatBox.scrollTop = chatBox.scrollHeight;
-    return;
-  }
-
-  /* =====================================================
-     ETAPA 3 → CHAT NORMAL (FAQ + RAG)
-  ===================================================== */
 
   const typing = document.createElement("div");
   typing.className = "message bot";
@@ -249,6 +227,10 @@ function fecharModal(){
   document.getElementById("modalDuvida").style.display="none";
 }
 
+/* =====================================================
+   ENVIAR DÚVIDA (ROTA CORRIGIDA)
+===================================================== */
+
 async function enviarDuvida(){
 
   const nome = document.getElementById("duvidaNome").value.trim();
@@ -263,7 +245,7 @@ async function enviarDuvida(){
 
   try {
 
-    const response = await fetch("/duvida", {
+    const response = await fetch("/duvida", {   // 🔥 CORRIGIDO AQUI
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ nome, matricula, email, pergunta })
@@ -275,6 +257,7 @@ async function enviarDuvida(){
       alert("✅ Dúvida enviada com sucesso!");
       fecharModal();
 
+      // Limpa campos
       document.getElementById("duvidaNome").value="";
       document.getElementById("duvidaMatricula").value="";
       document.getElementById("duvidaEmail").value="";

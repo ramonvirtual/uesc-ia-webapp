@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar Dúvida - UescCIC</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="duvidas.css"> <!-- CSS separado -->
+
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= HEADER ================= -->
+
+  <div class="header-duvida">
+    <img src="LOGO-CIC.png" class="logo-cic" alt="Logo CIC">
+    <div>
+      <h2>Registrar Dúvida Institucional</h2>
+      <p>Envie sua dúvida caso não tenha sido respondida pelo assistente.</p>
+    </div>
+  </div>
+
+  <!-- ================= FORM ================= -->
+
+  <form id="formDuvida" class="form-card">
+
+    <div class="input-group">
+      <label>Nome Completo</label>
+      <input type="text" id="nome" required>
+    </div>
+
+    <div class="input-group">
+      <label>Matrícula</label>
+      <input type="text" id="matricula" required>
+    </div>
+
+    <div class="input-group">
+      <label>Email Institucional</label>
+      <input type="email" id="email" required>
+    </div>
+
+    <div class="input-group">
+      <label>Descreva sua dúvida</label>
+      <textarea id="pergunta" required></textarea>
+    </div>
+
+    <button type="submit" id="btnEnviar">
+      📩 Enviar Dúvida
+    </button>
+
+    <div id="feedback" class="feedback"></div>
+
+  </form>
+
+</div>
+
+<script>
+
+document.getElementById("formDuvida").addEventListener("submit", async function(e){
+
+  e.preventDefault();
+
+  const btn = document.getElementById("btnEnviar");
+  const feedback = document.getElementById("feedback");
+
+  btn.disabled = true;
+  feedback.className = "feedback";
+  feedback.innerText = "🔄 Enviando sua dúvida...";
+
+  const dados = {
+    nome: document.getElementById("nome").value.trim(),
+    matricula: document.getElementById("matricula").value.trim(),
+    email: document.getElementById("email").value.trim(),
+    pergunta: document.getElementById("pergunta").value.trim()
+  };
+
+  try {
+
+    const response = await fetch("/registrar-duvida", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify(dados)
+    });
+
+    const data = await response.json();
+
+    if(response.ok){
+
+      feedback.className = "feedback success";
+      feedback.innerText = "✅ Dúvida enviada com sucesso! Redirecionando para o assistente...";
+
+      document.getElementById("formDuvida").reset();
+
+      setTimeout(()=>{
+        window.location.href = "/";
+      }, 2500);
+
+    } else {
+
+      feedback.className = "feedback error";
+      feedback.innerText = "❌ " + (data.error || "Erro ao registrar dúvida.");
+
+      btn.disabled = false;
+    }
+
+  } catch (error) {
+
+    feedback.className = "feedback error";
+    feedback.innerText = "⚠️ Erro de comunicação com o servidor.";
+
+    btn.disabled = false;
+  }
+
+});
+
+</script>
+
+</body>
+</html>

@@ -9,9 +9,10 @@ import bcrypt from "bcrypt";
 import pkg from "pdf-parse";
 
 const pdfParse = pkg;
+
 dotenv.config();
 
-console.log("🎓 SISTEMA OFICIAL UESCCIC (RAG INSTITUCIONAL PRODUÇÃO)");
+console.log("🎓 SISTEMA UESCCIC - RAG INSTITUCIONAL AVANÇADO");
 
 const app = express();
 
@@ -29,7 +30,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // usar true apenas em HTTPS
+    secure: false,
     sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 4
   }
@@ -40,7 +41,7 @@ app.use(express.static("public"));
 const PORT = 3001;
 
 /* =====================================================
-   BANCO
+   MYSQL
 ===================================================== */
 
 const db = await mysql.createConnection({
@@ -64,7 +65,7 @@ const openai = new OpenAI({
    FUNÇÕES AUXILIARES
 ===================================================== */
 
-function normalizar(texto) {
+function limparTexto(texto) {
   return texto
     .toLowerCase()
     .normalize("NFD")
@@ -73,28 +74,12 @@ function normalizar(texto) {
     .trim();
 }
 
-function extrairPalavraChave(texto) {
-  const stopWords = [
-    "o","que","é","e","me","fale","sobre",
-    "explique","qual","significado","de",
-    "do","da","dos","das"
-  ];
-
-  const palavras = normalizar(texto).split(" ");
-  return palavras.filter(p => !stopWords.includes(p)).join(" ");
-}
-
-function similaridadeTexto(a, b) {
-  const A = normalizar(a);
-  const B = normalizar(b);
-
-  if (A.includes(B) || B.includes(A)) return 1;
-
-  const palavrasA = A.split(" ");
-  const palavrasB = B.split(" ");
-
-  let iguais = palavrasA.filter(p => palavrasB.includes(p)).length;
-  return iguais / Math.max(palavrasA.length, palavrasB.length);
+function dividirTexto(texto, tamanho = 500) {
+  const partes = [];
+  for (let i = 0; i < texto.length; i += tamanho) {
+    partes.push(texto.slice(i, i + tamanho));
+  }
+  return partes;
 }
 
 function cosineSimilarity(vecA, vecB) {
@@ -116,34 +101,37 @@ function autenticar(req, res, next) {
 ===================================================== */
 
 app.post("/login", async (req, res) => {
+
   try {
 
     const { email, senha } = req.body;
-
-    if (!email || !senha)
-      return res.status(400).json({ error: "Credenciais inválidas." });
 
     const [rows] = await db.execute(
       "SELECT * FROM usuarios WHERE email = ? LIMIT 1",
       [email]
     );
 
-    if (!rows.length)
+    if (rows.length === 0)
       return res.status(401).json({ error: "Usuário não encontrado." });
 
-    const senhaValida = await bcrypt.compare(senha, rows[0].senha);
+    const usuario = rows[0];
+    const senhaValida = await bcrypt.compare(senha, usuario.senha);
 
     if (!senhaValida)
       return res.status(401).json({ error: "Senha incorreta." });
 
-    req.session.usuario = { id: rows[0].id, email };
+    req.session.usuario = {
+      id: usuario.id,
+      email: usuario.email
+    };
 
-    res.json({ status: true });
+    return res.json({ status: true });
 
   } catch (error) {
     console.error("🔥 ERRO LOGIN:", error);
-    res.status(500).json({ error: "Erro interno." });
+    return res.status(500).json({ error: "Erro interno." });
   }
+
 });
 
 /* =====================================================
@@ -151,9 +139,9 @@ app.post("/login", async (req, res) => {
 ===================================================== */
 
 app.get("/verificar-auth", (req, res) => {
-  if (req.session.usuario)
+  if (req.session.usuario) {
     return res.json({ autorizado: true });
-
+  }
   return res.status(401).json({ autorizado: false });
 });
 
@@ -167,34 +155,22 @@ app.post("/registrar-duvida", async (req, res) => {
 
     const { nome, matricula, email, pergunta } = req.body;
 
-    if (!nome || !matricula || !email || !pergunta) {
-      return res.status(400).json({
-        error: "Todos os campos são obrigatórios."
-      });
-    }
-
     await db.execute(
       "INSERT INTO duvidas (nome, matricula, email, pergunta) VALUES (?, ?, ?, ?)",
       [nome, matricula, email, pergunta]
     );
 
-    console.log("📩 Nova dúvida registrada:", nome);
-
     return res.json({ status: true });
 
   } catch (error) {
-
-    console.error("🔥 ERRO AO REGISTRAR DÚVIDA:", error);
-
-    return res.status(500).json({
-      error: "Erro interno ao registrar dúvida."
-    });
+    console.error("🔥 ERRO DÚVIDA:", error);
+    return res.status(500).json({ error: "Erro ao registrar dúvida." });
   }
 
 });
 
 /* =====================================================
-   UPLOAD PDF (ADMIN)
+   UPLOAD PDF (RAG)
 ===================================================== */
 
 const upload = multer({ dest: "uploads/" });
@@ -203,16 +179,11 @@ app.post("/upload-pdf", autenticar, upload.single("arquivo"), async (req, res) =
 
   try {
 
-    if (!req.file)
-      return res.status(400).json({ error: "Arquivo não enviado." });
-
     const buffer = fs.readFileSync(req.file.path);
     const data = await pdfParse(buffer);
+    const chunks = dividirTexto(data.text);
 
-    const texto = data.text;
-    const partes = texto.match(/.{1,500}(\s|$)/g);
-
-    for (let chunk of partes) {
+    for (let chunk of chunks) {
 
       const embedding = await openai.embeddings.create({
         model: "text-embedding-3-small",
@@ -231,12 +202,13 @@ app.post("/upload-pdf", autenticar, upload.single("arquivo"), async (req, res) =
 
     fs.unlinkSync(req.file.path);
 
-    res.json({ status: true });
+    return res.json({ status: true });
 
   } catch (error) {
     console.error("🔥 ERRO UPLOAD:", error);
-    res.status(500).json({ error: "Erro ao processar PDF." });
+    return res.status(500).json({ error: "Erro ao indexar PDF." });
   }
+
 });
 
 /* =====================================================
@@ -244,14 +216,12 @@ app.post("/upload-pdf", autenticar, upload.single("arquivo"), async (req, res) =
 ===================================================== */
 
 app.get("/documentos", autenticar, async (req, res) => {
-  const [docs] = await db.execute(
-    "SELECT DISTINCT titulo FROM documentos"
-  );
+  const [docs] = await db.execute("SELECT DISTINCT titulo FROM documentos");
   res.json(docs);
 });
 
 /* =====================================================
-   CHAT RAG INSTITUCIONAL COMPLETO
+   CHAT INTELIGENTE (FAQ + RAG + FALLBACK)
 ===================================================== */
 
 app.post("/chat", async (req, res) => {
@@ -262,57 +232,72 @@ app.post("/chat", async (req, res) => {
     if (!message)
       return res.status(400).json({ error: "Mensagem vazia" });
 
-    const perguntaNormalizada = normalizar(message);
-    const palavraChave = extrairPalavraChave(message);
+    const perguntaLimpa = limparTexto(message);
 
-    /* 1️⃣ FAQ EXATO */
-    const [faqRows] = await db.execute("SELECT pergunta, resposta FROM faq");
+    /* =========================
+       1️⃣ PRIORIDADE FAQ
+    ========================= */
 
-    for (let item of faqRows) {
-      if (normalizar(item.pergunta) === perguntaNormalizada) {
-        return res.json({ reply: item.resposta, fonte: "FAQ" });
+    const [faq] = await db.execute("SELECT pergunta, resposta FROM faq");
+
+    for (let item of faq) {
+      if (limparTexto(item.pergunta).includes(perguntaLimpa)) {
+        return res.json({
+          reply: item.resposta,
+          fonte: "FAQ"
+        });
       }
     }
 
-    /* 2️⃣ FAQ APROXIMADO */
-    let melhorFAQ = null;
-    let melhorScore = 0;
+    /* =========================
+       2️⃣ RAG SEMÂNTICO
+    ========================= */
 
-    for (let item of faqRows) {
-      const score = similaridadeTexto(item.pergunta, message);
-      if (score > melhorScore) {
-        melhorScore = score;
-        melhorFAQ = item;
-      }
+    const embeddingPergunta = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: message
+    });
+
+    const vetorPergunta = embeddingPergunta.data[0].embedding;
+
+    const [docs] = await db.execute("SELECT chunk, embedding FROM documentos");
+
+    let melhores = [];
+
+    for (let doc of docs) {
+      if (!doc.embedding) continue;
+
+      const vetorDoc = JSON.parse(doc.embedding);
+      const similaridade = cosineSimilarity(vetorPergunta, vetorDoc);
+
+      melhores.push({
+        chunk: doc.chunk,
+        similaridade
+      });
     }
 
-    if (melhorScore >= 0.6) {
-      return res.json({ reply: melhorFAQ.resposta, fonte: "FAQ" });
-    }
+    melhores.sort((a, b) => b.similaridade - a.similaridade);
 
-    /* 3️⃣ BUSCA TEXTUAL */
-    const [matchTexto] = await db.execute(
-      "SELECT chunk FROM documentos WHERE LOWER(chunk) LIKE ? LIMIT 5",
-      [`%${palavraChave}%`]
-    );
+    if (melhores.length > 0 && melhores[0].similaridade >= 0.45) {
 
-    if (matchTexto.length) {
-
-      const contexto = matchTexto.map(d => d.chunk).join("\n\n");
+      const contexto = melhores.slice(0, 3)
+        .map(m => m.chunk)
+        .join("\n\n");
 
       try {
 
         const respostaIA = await openai.responses.create({
           model: "gpt-4.1-mini",
           input: `
-Responda exclusivamente com base no conteúdo abaixo:
+Você é um assistente institucional da UESC.
+Responda exclusivamente com base no conteúdo abaixo.
 
 ${contexto}
 
 Pergunta:
 ${message}
 
-Resposta institucional clara e objetiva:
+Resposta institucional:
 `
         });
 
@@ -321,36 +306,43 @@ Resposta institucional clara e objetiva:
           fonte: "RAG"
         });
 
-      } catch {
+      } catch (gptError) {
+
+        console.error("⚠️ GPT falhou — usando fallback.");
 
         return res.json({
           reply: contexto.substring(0, 1200),
-          fonte: "RAG"
+          fonte: "RAG_FALLBACK"
         });
       }
     }
 
-    /* 4️⃣ FALLBACK */
+    /* =========================
+       3️⃣ PADRÃO
+    ========================= */
+
     return res.json({
       reply: `
 🏛️ <strong>Consulta Institucional Oficial</strong><br><br>
-
-📌 A informação não foi localizada diretamente na base institucional.<br><br>
-
-📌 <strong>Sugestões:</strong><br>
-• Use o termo principal (ex: CONSU, COLCIC, CONSEPE)<br>
-• Pergunte: "O que é CONSU?"<br>
-• Pergunte: "Qual a composição do Conselho Superior?"<br><br>
-
-🔎 Termo identificado: ${palavraChave.toUpperCase()}
+📌 A informação solicitada não foi localizada na base institucional oficial.<br><br>
+🌐 https://www.uesc.br/<br>
+🎓 https://colcic.uesc.br/<br>
+📧 colcic@uesc.br<br>
+📞 (73) 3680-5110
 `,
       fonte: "BASE_OFICIAL"
     });
 
   } catch (error) {
+
     console.error("🔥 ERRO CHAT:", error);
-    res.status(500).json({ error: "Erro interno." });
+
+    return res.status(500).json({
+      reply: "⚠️ Ocorreu uma instabilidade na comunicação com o servidor institucional.",
+      fonte: "ERRO"
+    });
   }
+
 });
 
 /* =====================================================
@@ -358,46 +350,5 @@ Resposta institucional clara e objetiva:
 ===================================================== */
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-});
-
-/* =====================================================
-   ADMIN – LISTAR DÚVIDAS
-===================================================== */
-
-app.get("/admin/duvidas", autenticar, async (req, res) => {
-
-  try {
-
-    const [rows] = await db.execute(
-      "SELECT id, nome, matricula, email, pergunta, data_envio FROM duvidas ORDER BY id DESC"
-    );
-
-    res.json(rows);
-
-  } catch (error) {
-    console.error("🔥 ERRO LISTAR DÚVIDAS:", error);
-    res.status(500).json({ error: "Erro ao buscar dúvidas." });
-  }
-});
-
-/* =====================================================
-   ADMIN – EXCLUIR DÚVIDA
-===================================================== */
-
-app.delete("/admin/duvidas/:id", autenticar, async (req, res) => {
-
-  try {
-
-    await db.execute(
-      "DELETE FROM duvidas WHERE id = ?",
-      [req.params.id]
-    );
-
-    res.json({ status: true });
-
-  } catch (error) {
-    console.error("🔥 ERRO EXCLUIR DÚVIDA:", error);
-    res.status(500).json({ error: "Erro ao excluir dúvida." });
-  }
+  console.log(`🚀 Sistema rodando em http://localhost:${PORT}`);
 });
