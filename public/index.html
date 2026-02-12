@@ -3,49 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UESCCIC - Assistente Acadêmico</title>
+
+<title>UESCCIC – Sistema Institucional de Consulta</title>
+
 <link rel="stylesheet" href="style.css">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 </head>
+
 <body>
 
+<!-- ================= HEADER ================= -->
+
 <header class="header">
+
   <div class="logo-area">
-    <img src="LOGO-CIC.png" class="logo">
-    <div>
+    <img src="LOGO-CIC.png" class="logo" alt="Logo UESCCIC">
+
+    <div class="header-text">
       <h1>UESCCIC</h1>
-      <p>Assistente Acadêmico Inteligente</p>
+      <p>Sistema Institucional de Consulta Acadêmica</p>
     </div>
   </div>
+
+  <div class="header-actions">
+    <span class="badge">🏛 Sistema Oficial da Coordenação</span>
+  </div>
+
 </header>
 
+
+<!-- ================= AVISO INSTITUCIONAL ================= -->
+
+<section class="institutional-banner">
+  📌 Este sistema realiza consultas exclusivamente na base institucional oficial (FAQ e Documentos Oficiais).
+</section>
+
+
+<!-- ================= MAIN ================= -->
+
 <main class="main">
+
   <div class="chat-card">
 
+    <!-- CHAT -->
     <div id="chat-box" class="chat-box"></div>
 
-    <!-- Mascote dentro do chat -->
+    <!-- MASCOTE -->
     <div id="mascote">
       <div class="mascote-container">
-        <img src="mascote.png" alt="Mascote UescCIC">
+        <img src="mascote.png" alt="Mascote Institucional UescCIC">
       </div>
     </div>
 
   </div>
+
 </main>
 
+
+<!-- ================= FOOTER ================= -->
+
 <footer class="footer">
+
   <div class="input-container">
 
-    <button id="voice-toggle" onclick="toggleVoice()">🔊 Voz ON</button>
+    <div class="left-buttons">
+      <button id="voice-toggle" onclick="toggleVoice()">
+        🔊 Voz ON
+      </button>
+    </div>
 
-    <input type="text" id="user-input" placeholder="Digite sua pergunta acadêmica..." />
+    <input
+      type="text"
+      id="user-input"
+      placeholder="Digite sua pergunta institucional..."
+      aria-label="Campo de pergunta institucional"
+    />
 
-    <button onclick="sendMessage()">Enviar</button>
+    <button class="send-btn" onclick="sendMessage()">
+      Enviar
+    </button>
 
   </div>
+
 </footer>
 
+
+<!-- ================= SCRIPT ================= -->
+
 <script src="script.js"></script>
+
 </body>
 </html>

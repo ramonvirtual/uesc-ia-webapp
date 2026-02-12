@@ -4,23 +4,36 @@ import OpenAI from "openai";
 import mysql from "mysql2/promise";
 import multer from "multer";
 import fs from "fs";
+import session from "express-session";
+import bcrypt from "bcrypt";
 import pkg from "pdf-parse";
 
 const pdfParse = pkg;
 
 dotenv.config();
 
-console.log("🔥 SERVIDOR UESCCIC DEFINITIVO 🔥");
+console.log("🎓 SISTEMA OFICIAL UESCCIC (FAQ + RAG + LOGIN SEGURO)");
 
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
+/* =====================================================
+   SESSION CONFIG
+===================================================== */
+
+app.use(session({
+  secret: "uesc_cic_secret_2026",
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }
+}));
+
 const PORT = 3001;
 
-/* =========================
-   MYSQL
-========================= */
+/* =====================================================
+   CONEXÃO MYSQL
+===================================================== */
 
 const db = await mysql.createConnection({
   host: "localhost",
@@ -29,21 +42,101 @@ const db = await mysql.createConnection({
   database: "uesc_ia"
 });
 
-console.log("🗄️ MySQL conectado");
+console.log("🗄️ Banco conectado com sucesso");
 
-/* =========================
+/* =====================================================
    OPENAI
-========================= */
+===================================================== */
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-/* =========================
-   FUNÇÕES AUXILIARES
-========================= */
+/* =====================================================
+   MIDDLEWARE DE AUTENTICAÇÃO
+===================================================== */
 
-function dividirTexto(texto, tamanho = 700) {
+function autenticar(req, res, next) {
+  if (!req.session.usuario) {
+    return res.status(401).json({ error: "Não autorizado" });
+  }
+  next();
+}
+
+/* =====================================================
+   LOGIN SEGURO COM BCRYPT
+===================================================== */
+
+app.post("/login", async (req, res) => {
+
+  try {
+
+    const { email, senha } = req.body;
+
+    if (!email || !senha) {
+      return res.status(400).json({ error: "Credenciais inválidas." });
+    }
+
+    const [rows] = await db.execute(
+      "SELECT * FROM usuarios WHERE email = ? LIMIT 1",
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Usuário não encontrado." });
+    }
+
+    const usuario = rows[0];
+
+    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+
+    if (!senhaValida) {
+      return res.status(401).json({ error: "Senha incorreta." });
+    }
+
+    req.session.usuario = {
+      id: usuario.id,
+      email: usuario.email
+    };
+
+    console.log("🔐 Login realizado:", email);
+
+    res.json({ status: true });
+
+  } catch (error) {
+
+    console.error("🔥 ERRO LOGIN:", error);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+/* =====================================================
+   VERIFICAR AUTH
+===================================================== */
+
+app.get("/verificar-auth", (req, res) => {
+  if (req.session.usuario) {
+    res.json({ autorizado: true });
+  } else {
+    res.status(401).json({ autorizado: false });
+  }
+});
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.json({ status: "Logout realizado" });
+  });
+});
+
+/* =====================================================
+   FUNÇÕES AUXILIARES
+===================================================== */
+
+function dividirTexto(texto, tamanho = 300) {
   const partes = [];
   for (let i = 0; i < texto.length; i += tamanho) {
     partes.push(texto.slice(i, i + tamanho));
@@ -51,22 +144,27 @@ function dividirTexto(texto, tamanho = 700) {
   return partes;
 }
 
-function cosineSimilarity(vecA, vecB) {
-  const dot = vecA.reduce((sum, val, i) => sum + val * vecB[i], 0);
-  const magA = Math.sqrt(vecA.reduce((sum, val) => sum + val * val, 0));
-  const magB = Math.sqrt(vecB.reduce((sum, val) => sum + val * val, 0));
-  return dot / (magA * magB);
+function normalizar(texto) {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
 
-/* =========================
-   UPLOAD PDF
-========================= */
+/* =====================================================
+   UPLOAD PDF (PROTEGIDO)
+===================================================== */
 
 const upload = multer({ dest: "uploads/" });
 
-app.post("/upload-pdf", upload.single("arquivo"), async (req, res) => {
+app.post("/upload-pdf", autenticar, upload.single("arquivo"), async (req, res) => {
 
   try {
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Arquivo não enviado." });
+    }
 
     const buffer = fs.readFileSync(req.file.path);
     const data = await pdfParse(buffer);
@@ -91,17 +189,29 @@ app.post("/upload-pdf", upload.single("arquivo"), async (req, res) => {
 
     fs.unlinkSync(req.file.path);
 
-    res.json({ status: "PDF indexado com sucesso" });
+    res.json({ status: "Documento institucional indexado com sucesso." });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao processar PDF" });
+
+    console.error("🔥 ERRO UPLOAD:", error);
+    res.status(500).json({ error: "Erro ao indexar PDF." });
   }
 });
 
-/* =========================
-   CHAT INTELIGENTE
-========================= */
+/* =====================================================
+   LISTAR DOCUMENTOS (PROTEGIDO)
+===================================================== */
+
+app.get("/documentos", autenticar, async (req, res) => {
+  const [docs] = await db.execute(
+    "SELECT DISTINCT titulo FROM documentos"
+  );
+  res.json(docs);
+});
+
+/* =====================================================
+   CHAT (FAQ + RAG)
+===================================================== */
 
 app.post("/chat", async (req, res) => {
 
@@ -110,190 +220,90 @@ app.post("/chat", async (req, res) => {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: "Mensagem vazia" });
 
-    console.log("📩 Pergunta:", message);
-    const mensagemLower = message.toLowerCase();
+    const pergunta = normalizar(message);
 
-    /* ====================================================
-       1️⃣ DETECÇÃO DE LINK (PRIORIDADE TOTAL)
-    ==================================================== */
-
-    const perguntaLink =
-      mensagemLower.includes("link") ||
-      mensagemLower.includes("site") ||
-      mensagemLower.includes("url") ||
-      mensagemLower.includes("endereço");
-
-    if (perguntaLink) {
-
-      console.log("🌐 LINK detectado → WEB_OFICIAL");
-
-      const respostaWeb = await openai.responses.create({
-        model: "gpt-4.1-mini",
-        tools: [{ type: "web_search" }],
-        input: `
-        Pesquise exclusivamente nos domínios:
-
-        site:uesc.br
-        site:colcic.uesc.br
-
-        Pergunta:
-        ${message}
-
-        Se encontrar, retorne apenas:
-        LINK: <url_oficial>
-
-        Se não encontrar, retorne:
-        NAO_ENCONTRADO
-        `
-      });
-
-      const textoWeb = respostaWeb.output_text.trim();
-
-      if (!textoWeb.includes("NAO_ENCONTRADO")) {
-
-        return res.json({
-          reply: `🌐 Site oficial encontrado:\n\n${textoWeb}`,
-          fonte: "WEB_OFICIAL"
-        });
-      }
-
-      return res.json({
-        reply: `🌐 O site oficial do COLCIC é:\nhttps://colcic.uesc.br/\n\n📌 Portal principal da UESC:\nhttps://www.uesc.br`,
-        fonte: "WEB_PADRAO"
-      });
-    }
-
-    /* ====================================================
-       2️⃣ FAQ (MATCH EXATO)
-    ==================================================== */
-
+    /* FAQ */
     const [faqRows] = await db.execute("SELECT pergunta, resposta FROM faq");
 
     for (let item of faqRows) {
 
-      if (mensagemLower.trim() === item.pergunta.toLowerCase().trim()) {
+      if (pergunta.includes(normalizar(item.pergunta))) {
 
-        console.log("📌 Respondendo via FAQ");
+        const respostaIA = await openai.responses.create({
+          model: "gpt-4.1-mini",
+          input: `
+Utilize exclusivamente o conteúdo oficial abaixo:
+
+${item.resposta}
+
+Pergunta:
+${message}
+
+Responda formalmente.
+`
+        });
 
         return res.json({
-          reply: item.resposta,
+          reply: respostaIA.output_text,
           fonte: "FAQ"
         });
       }
     }
 
-    /* ====================================================
-       3️⃣ RAG (PDF)
-    ==================================================== */
+    /* RAG Textual */
+    const [matchTexto] = await db.execute(
+      "SELECT chunk FROM documentos WHERE chunk LIKE ? LIMIT 5",
+      [`%${message}%`]
+    );
 
-    const embeddingPergunta = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: message
-    });
+    if (matchTexto.length > 0) {
 
-    const vetorPergunta = embeddingPergunta.data[0].embedding;
-    const [docs] = await db.execute("SELECT * FROM documentos");
+      const contexto = matchTexto.map(d => d.chunk).join("\n\n");
 
-    let resultados = [];
-
-    for (let doc of docs) {
-
-      if (!doc.embedding) continue;
-
-      const vetorDoc = JSON.parse(doc.embedding);
-      const similaridade = cosineSimilarity(vetorPergunta, vetorDoc);
-
-      resultados.push({ doc, similaridade });
-    }
-
-    resultados.sort((a,b)=> b.similaridade - a.similaridade);
-    const top5 = resultados.slice(0,5);
-
-    console.log("📊 Similaridades:", top5.map(r=>r.similaridade));
-
-    if (top5.length > 0 && top5[0].similaridade > 0.60) {
-
-      const contexto = top5.map(r=>r.doc.chunk).join("\n\n");
-
-      const respostaRAG = await openai.responses.create({
+      const respostaIA = await openai.responses.create({
         model: "gpt-4.1-mini",
         input: `
-        Utilize exclusivamente o conteúdo abaixo:
+Utilize exclusivamente o conteúdo institucional abaixo:
 
-        ${contexto}
+${contexto}
 
-        Pergunta:
-        ${message}
-        `
+Pergunta:
+${message}
+
+Responda formalmente e resumidamente.
+`
       });
 
       return res.json({
-        reply: respostaRAG.output_text,
+        reply: respostaIA.output_text,
         fonte: "RAG"
       });
     }
 
-    /* ====================================================
-       4️⃣ WEB FALLBACK
-    ==================================================== */
-
-    console.log("🌐 Tentando WEB fallback");
-
-    const respostaWebFallback = await openai.responses.create({
-      model: "gpt-4.1-mini",
-      tools: [{ type: "web_search" }],
-      input: `
-      Pesquise nos domínios:
-
-      site:uesc.br
-      site:colcic.uesc.br
-
-      Pergunta:
-      ${message}
-
-      Se não encontrar, retorne:
-      NAO_ENCONTRADO
-      `
-    });
-
-    if (!respostaWebFallback.output_text.includes("NAO_ENCONTRADO")) {
-
-      return res.json({
-        reply: respostaWebFallback.output_text,
-        fonte: "WEB_OFICIAL"
-      });
-    }
-
-    /* ====================================================
-       5️⃣ IA FINAL
-    ==================================================== */
-
-    console.log("🤖 Respondendo via IA");
-
-    const respostaIA = await openai.responses.create({
-      model: "gpt-4.1-mini",
-      input: message
-    });
-
+    /* PADRÃO */
     return res.json({
-      reply: respostaIA.output_text,
-      fonte: "IA"
+      reply: `
+🏛️ <strong>Consulta Institucional Oficial</strong><br><br>
+📌 A informação solicitada não foi localizada na base institucional oficial.<br><br>
+🌐 https://www.uesc.br/<br>
+🎓 https://colcic.uesc.br/<br>
+📧 colcic@uesc.br<br>
+📞 (73) 3680-5110
+`,
+      fonte: "BASE_OFICIAL"
     });
 
   } catch (error) {
 
-    console.error("🔥 ERRO:", error.message);
-
-    res.status(500).json({
-      error: "Erro interno do servidor"
-    });
+    console.error("🔥 ERRO CHAT:", error);
+    res.status(500).json({ error: "Erro interno no servidor institucional." });
   }
 });
 
-/* =========================
-   SERVIDOR
-========================= */
+/* =====================================================
+   START
+===================================================== */
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`🚀 Sistema rodando em http://localhost:${PORT}`);
 });

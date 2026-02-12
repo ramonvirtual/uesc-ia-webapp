@@ -15,11 +15,13 @@ function loadVoices() {
 
   voices = speechSynthesis.getVoices();
 
+  // Prioriza Google pt-BR
   femaleVoice = voices.find(v =>
     v.lang === "pt-BR" &&
     v.name.toLowerCase().includes("google")
   );
 
+  // Fallback para qualquer pt-BR
   if (!femaleVoice) {
     femaleVoice = voices.find(v => v.lang === "pt-BR");
   }
@@ -52,7 +54,7 @@ function toggleVoice() {
 
 
 /* =====================================================
-   FALAR COM EXPRESSÃO
+   FUNÇÃO FALAR (TOM INSTITUCIONAL)
 ===================================================== */
 
 function falar(texto) {
@@ -71,15 +73,15 @@ function falar(texto) {
 
     utterance.voice = femaleVoice;
     utterance.lang = "pt-BR";
-    utterance.rate = 0.92; // tom institucional
+    utterance.rate = 0.92;   // Tom mais formal
     utterance.pitch = 1;
 
     utterance.onstart = () => {
-      mascote.classList.add("falando");
+      mascote?.classList.add("falando");
     };
 
     utterance.onend = () => {
-      mascote.classList.remove("falando");
+      mascote?.classList.remove("falando");
     };
 
     speechSynthesis.speak(utterance);
@@ -99,23 +101,23 @@ window.onload = function () {
   const mensagem = `
   👋 <strong>Bem-vindo(a) ao Assistente Virtual UescCIC</strong><br><br>
 
-  🎓 Informações acadêmicas<br>
+  🎓 Informações acadêmicas oficiais<br>
   📚 Normas institucionais<br>
   🖥️ Orientações do Curso<br><br>
 
-  ✨ Faça sua pergunta para começar.
+  ✨ Faça sua pergunta para iniciar a consulta institucional.
   `;
 
   chatBox.innerHTML += `<div class="message bot">${mensagem}</div>`;
 
   setTimeout(() => {
-    falar("Bem-vindo ao Assistente Virtual UescCIC. Estou pronto para auxiliá-lo com informações acadêmicas e institucionais.");
-  }, 600);
+    falar("Bem-vindo ao Assistente Virtual UescCIC. Estou pronto para auxiliá-lo com informações acadêmicas e institucionais oficiais.");
+  }, 700);
 };
 
 
 /* =====================================================
-   ENVIO DA MENSAGEM (COM SUPORTE A RAG)
+   ENVIO DA MENSAGEM (FAQ + RAG OFICIAL)
 ===================================================== */
 
 async function sendMessage() {
@@ -126,19 +128,21 @@ async function sendMessage() {
 
   if (!message) return;
 
+  // Mostra mensagem do usuário
   chatBox.innerHTML += `<div class="message user">${message}</div>`;
   input.value = "";
 
+  // Indicador de processamento
   const typing = document.createElement("div");
   typing.className = "message bot";
-  typing.innerHTML = "⌛ Analisando informações...";
+  typing.innerHTML = "⌛ Consultando base institucional...";
   chatBox.appendChild(typing);
 
   chatBox.scrollTop = chatBox.scrollHeight;
 
   try {
 
-    const response = await fetch("http://localhost:3001/chat", {
+    const response = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message })
@@ -147,24 +151,28 @@ async function sendMessage() {
     if (!response.ok) throw new Error("Erro servidor");
 
     const data = await response.json();
+
     chatBox.removeChild(typing);
 
-    const resposta = data.reply || 
-      "Não foi possível localizar a informação solicitada no momento.";
+    const resposta = data.reply ||
+      "Não foi possível localizar a informação solicitada.";
 
     let badge = "";
 
-    // 🧠 IDENTIFICA FONTE DA RESPOSTA
+    /* ==========================================
+       IDENTIFICAÇÃO DA FONTE (OFICIAL)
+    ========================================== */
+
     if (data.fonte === "FAQ") {
-      badge = "📌 <em>Resposta da base institucional</em><br><br>";
+      badge = "📌 <em>Resposta da Base Institucional (FAQ)</em><br><br>";
     }
 
     if (data.fonte === "RAG") {
-      badge = "📚 <em>Baseado em documento institucional</em><br><br>";
+      badge = "📚 <em>Baseado em Documento Institucional Oficial</em><br><br>";
     }
 
-    if (data.fonte === "IA") {
-      badge = "🤖 <em>Resposta assistida por IA</em><br><br>";
+    if (data.fonte === "BASE_OFICIAL") {
+      badge = "🏛️ <em>Consulta Institucional Oficial</em><br><br>";
     }
 
     chatBox.innerHTML += `
@@ -181,7 +189,7 @@ async function sendMessage() {
     chatBox.removeChild(typing);
 
     const erroMsg =
-      "⚠️ Ocorreu uma instabilidade na comunicação com o servidor.";
+      "⚠️ Ocorreu uma instabilidade na comunicação com o servidor institucional.";
 
     chatBox.innerHTML += `<div class="message bot">${erroMsg}</div>`;
 
@@ -196,8 +204,9 @@ async function sendMessage() {
    ENTER PARA ENVIAR
 ===================================================== */
 
-document.getElementById("user-input").addEventListener("keypress", function (e) {
-  if (e.key === "Enter") {
-    sendMessage();
-  }
-});
+document.getElementById("user-input")
+  ?.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  });
