@@ -41,21 +41,13 @@ const PORT = 3001;
 
 /* =====================================================
    BANCO
-===================================================== 
+===================================================== */
 
 const db = await mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "",
   database: "uesc_ia"
-});
-*/
-
-const db = await mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
 });
 
 console.log("🗄️ Banco conectado");
@@ -365,14 +357,9 @@ Resposta institucional clara e objetiva:
    START
 ===================================================== */
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-  });
-}
-
-export default app;
-
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+});
 
 /* =====================================================
    ADMIN – LISTAR DÚVIDAS
@@ -414,4 +401,3 @@ app.delete("/admin/duvidas/:id", autenticar, async (req, res) => {
     res.status(500).json({ error: "Erro ao excluir dúvida." });
   }
 });
-
