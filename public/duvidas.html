@@ -6,14 +6,97 @@
 <title>Registrar Dúvida - UescCIC</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="duvidas.css"> <!-- CSS separado -->
+<link rel="stylesheet" href="duvidas.css">
+
+<style>
+body{
+  font-family:Poppins, sans-serif;
+  background:#f4f6fb;
+  margin:0;
+}
+
+.container{
+  max-width:650px;
+  margin:40px auto;
+  padding:20px;
+}
+
+.header-duvida{
+  display:flex;
+  align-items:center;
+  gap:15px;
+  margin-bottom:25px;
+}
+
+.logo-cic{
+  width:70px;
+}
+
+.form-card{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.08);
+}
+
+.input-group{
+  margin-bottom:15px;
+}
+
+.input-group label{
+  font-weight:600;
+  display:block;
+  margin-bottom:5px;
+}
+
+input, textarea{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:14px;
+}
+
+textarea{
+  min-height:120px;
+  resize:vertical;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#0066ff;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover{
+  background:#004ecc;
+}
+
+button:disabled{
+  background:#999;
+  cursor:not-allowed;
+}
+
+.feedback{
+  margin-top:15px;
+  font-weight:600;
+}
+
+.success{ color:green; }
+.error{ color:red; }
+
+</style>
 
 </head>
 <body>
 
 <div class="container">
-
-  <!-- ================= HEADER ================= -->
 
   <div class="header-duvida">
     <img src="LOGO-CIC.png" class="logo-cic" alt="Logo CIC">
@@ -22,8 +105,6 @@
       <p>Envie sua dúvida caso não tenha sido respondida pelo assistente.</p>
     </div>
   </div>
-
-  <!-- ================= FORM ================= -->
 
   <form id="formDuvida" class="form-card">
 
@@ -59,7 +140,9 @@
 
 <script>
 
-document.getElementById("formDuvida").addEventListener("submit", async function(e){
+const form = document.getElementById("formDuvida");
+
+form.addEventListener("submit", async function(e){
 
   e.preventDefault();
 
@@ -77,6 +160,13 @@ document.getElementById("formDuvida").addEventListener("submit", async function(
     pergunta: document.getElementById("pergunta").value.trim()
   };
 
+  if(!dados.nome || !dados.matricula || !dados.email || !dados.pergunta){
+    feedback.className = "feedback error";
+    feedback.innerText = "⚠️ Preencha todos os campos.";
+    btn.disabled = false;
+    return;
+  }
+
   try {
 
     const response = await fetch("/registrar-duvida", {
@@ -84,35 +174,38 @@ document.getElementById("formDuvida").addEventListener("submit", async function(
       headers: {
         "Content-Type": "application/json"
       },
-      credentials: "include",
       body: JSON.stringify(dados)
     });
 
-    const data = await response.json();
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {}
 
     if(response.ok){
 
       feedback.className = "feedback success";
-      feedback.innerText = "✅ Dúvida enviada com sucesso! Redirecionando para o assistente...";
+      feedback.innerText = "✅ Dúvida enviada com sucesso!";
 
-      document.getElementById("formDuvida").reset();
+      form.reset();
 
       setTimeout(()=>{
         window.location.href = "/";
-      }, 2500);
+      }, 2000);
 
     } else {
 
       feedback.className = "feedback error";
       feedback.innerText = "❌ " + (data.error || "Erro ao registrar dúvida.");
-
       btn.disabled = false;
     }
 
   } catch (error) {
 
+    console.error(error);
+
     feedback.className = "feedback error";
-    feedback.innerText = "⚠️ Erro de comunicação com o servidor.";
+    feedback.innerText = "⚠️ Não foi possível conectar ao servidor.";
 
     btn.disabled = false;
   }

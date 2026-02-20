@@ -10,12 +10,13 @@ let etapaAtendimento = 1;
 let nomeAluno = "";
 let matriculaAluno = "";
 
+let speaking = false;
+
 /* =====================================================
-   CARREGAR VOZ
+   CARREGAR VOZES
 ===================================================== */
 
 function loadVoices() {
-
   voices = speechSynthesis.getVoices();
 
   femaleVoice = voices.find(v =>
@@ -29,6 +30,7 @@ function loadVoices() {
 }
 
 speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
 
 /* =====================================================
    TOGGLE VOZ
@@ -51,19 +53,21 @@ function toggleVoice() {
 }
 
 /* =====================================================
-   FALAR
+   FALAR TEXTO (COM CONTROLE)
 ===================================================== */
 
 function falar(texto) {
 
-  if (!voiceEnabled || !femaleVoice) return;
+  if (!voiceEnabled || !femaleVoice || !texto) return;
 
   speechSynthesis.cancel();
+  speaking = true;
 
   const mascote = document.getElementById("mascote");
+
   const partes = texto.match(/.{1,200}(\s|$)/g);
 
-  partes?.forEach(parte => {
+  partes?.forEach((parte, index) => {
 
     const utterance = new SpeechSynthesisUtterance(parte);
 
@@ -73,7 +77,13 @@ function falar(texto) {
     utterance.pitch = 1;
 
     utterance.onstart = () => mascote?.classList.add("falando");
-    utterance.onend = () => mascote?.classList.remove("falando");
+
+    utterance.onend = () => {
+      if (index === partes.length - 1) {
+        mascote?.classList.remove("falando");
+        speaking = false;
+      }
+    };
 
     speechSynthesis.speak(utterance);
 
@@ -81,10 +91,10 @@ function falar(texto) {
 }
 
 /* =====================================================
-   ETAPA 1 – BOAS-VINDAS
+   BOAS-VINDAS
 ===================================================== */
 
-window.onload = function () {
+window.onload = () => {
 
   const chatBox = document.getElementById("chat-box");
 
@@ -116,59 +126,50 @@ async function sendMessage() {
   chatBox.innerHTML += `<div class="message user">${message}</div>`;
   input.value = "";
 
-  /* ============================
-     ETAPA 1 → CAPTURA NOME
-  ============================ */
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  /* ETAPA 1 → NOME */
 
   if (etapaAtendimento === 1) {
 
     nomeAluno = message;
     etapaAtendimento = 2;
 
-    chatBox.innerHTML += `
-      <div class="message bot">
-        Prazer, <strong>${nomeAluno}</strong>! 😊<br><br>
-        📌 Agora informe sua <strong>matrícula acadêmica</strong>.
-      </div>
+    const resposta = `
+      Prazer, <strong>${nomeAluno}</strong> 😊<br><br>
+      📌 Agora informe sua <strong>matrícula acadêmica</strong>.
     `;
 
+    chatBox.innerHTML += `<div class="message bot">${resposta}</div>`;
     falar(`Prazer ${nomeAluno}. Agora informe sua matrícula acadêmica.`);
     chatBox.scrollTop = chatBox.scrollHeight;
     return;
   }
 
-  /* ============================
-     ETAPA 2 → CAPTURA MATRÍCULA
-  ============================ */
+  /* ETAPA 2 → MATRÍCULA */
 
   if (etapaAtendimento === 2) {
 
     matriculaAluno = message;
     etapaAtendimento = 3;
 
-    chatBox.innerHTML += `
-      <div class="message bot">
-        ✅ Atendimento iniciado com sucesso!<br><br>
-
-        📚 Posso ajudar você com:
-        <br>
-        • CONSU, CONSEPE, COLCIC<br>
-        • Estatuto e Regimento da UESC<br>
-        • Normas acadêmicas oficiais<br>
-        • Estrutura institucional<br><br>
-
-        ✨ <strong>Qual é a sua dúvida?</strong>
-      </div>
+    const resposta = `
+      ✅ Atendimento iniciado com sucesso!<br><br>
+      📚 Posso ajudar você com:<br>
+      • CONSU, CONSEPE, COLCIC<br>
+      • Estatuto e Regimento da UESC<br>
+      • Normas acadêmicas oficiais<br>
+      • Estrura institucional<br><br>
+      ✨ <strong>Qual é a sua dúvida?</strong>
     `;
 
+    chatBox.innerHTML += `<div class="message bot">${resposta}</div>`;
     falar("Atendimento iniciado com sucesso. Como posso ajudar você hoje?");
     chatBox.scrollTop = chatBox.scrollHeight;
     return;
   }
 
-  /* =====================================================
-     ETAPA 3 → CHAT NORMAL (FAQ + RAG)
-  ===================================================== */
+  /* CHAT NORMAL */
 
   const typing = document.createElement("div");
   typing.className = "message bot";
@@ -185,24 +186,22 @@ async function sendMessage() {
       body: JSON.stringify({ message })
     });
 
-    if (!response.ok) throw new Error("Erro servidor");
+    if (!response.ok) throw new Error();
 
     const data = await response.json();
-    chatBox.removeChild(typing);
+
+    if (typing.parentNode) chatBox.removeChild(typing);
 
     let badge = "";
 
-    if (data.fonte === "FAQ") {
+    if (data.fonte === "FAQ")
       badge = "📌 <em>Resposta da Base Institucional (FAQ)</em><br><br>";
-    }
 
-    if (data.fonte === "RAG") {
+    if (data.fonte === "RAG")
       badge = "📚 <em>Baseado em Documento Institucional Oficial</em><br><br>";
-    }
 
-    if (data.fonte === "BASE_OFICIAL") {
+    if (data.fonte === "BASE_OFICIAL")
       badge = "🏛️ <em>Consulta Institucional Oficial</em><br><br>";
-    }
 
     chatBox.innerHTML += `
       <div class="message bot">
@@ -213,14 +212,15 @@ async function sendMessage() {
 
     falar(data.reply);
 
-  } catch (error) {
+  } catch {
 
-    chatBox.removeChild(typing);
+    if (typing.parentNode) chatBox.removeChild(typing);
 
-    const erroMsg =
-      "⚠️ Ocorreu uma instabilidade na comunicação com o servidor institucional.";
-
-    chatBox.innerHTML += `<div class="message bot">${erroMsg}</div>`;
+    chatBox.innerHTML += `
+      <div class="message bot">
+        ⚠️ Ocorreu uma instabilidade na comunicação com o servidor institucional.
+      </div>
+    `;
   }
 
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -231,10 +231,8 @@ async function sendMessage() {
 ===================================================== */
 
 document.getElementById("user-input")
-  ?.addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
+  ?.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
   });
 
 /* =====================================================
@@ -263,7 +261,7 @@ async function enviarDuvida(){
 
   try {
 
-    const response = await fetch("/duvida", {
+    const response = await fetch("/registrar-duvida", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ nome, matricula, email, pergunta })
@@ -283,7 +281,7 @@ async function enviarDuvida(){
       alert("⚠️ " + (data.error || "Erro ao enviar dúvida."));
     }
 
-  } catch(error){
+  } catch {
     alert("❌ Erro de comunicação com o servidor.");
   }
 }

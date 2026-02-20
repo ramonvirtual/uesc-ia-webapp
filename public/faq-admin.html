@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastrar FAQ - UescCIC</title>
+
+<link rel="stylesheet" href="faq-admin.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <img src="LOGO-CIC.png" class="logo" alt="Logo CIC">
+    <div>
+      <h1>Cadastro de FAQ Institucional</h1>
+      <p>Base oficial de perguntas e respostas do curso</p>
+    </div>
+  </div>
+
+  <form id="faqForm" class="card">
+
+    <label>Pergunta Institucional</label>
+    <input type="text" id="pergunta" placeholder="Ex: O que é o CONSU?" required>
+
+    <label>Resposta Oficial</label>
+    <textarea id="resposta" placeholder="Digite a resposta institucional completa..." required></textarea>
+
+    <button type="submit">💾 Salvar FAQ</button>
+
+  </form>
+
+</div>
+
+<script>
+
+/* 🔐 PROTEGER ACESSO */
+async function verificarAuth(){
+  try{
+    const res = await fetch("/verificar-auth",{ credentials:"include" });
+    if(!res.ok) window.location.href="/login.html";
+  }catch{
+    window.location.href="/login.html";
+  }
+}
+verificarAuth();
+
+/* SALVAR FAQ */
+const form = document.getElementById("faqForm");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const pergunta = document.getElementById("pergunta").value.trim();
+  const resposta = document.getElementById("resposta").value.trim();
+
+  if(!pergunta || !resposta){
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos obrigatórios',
+      text: 'Preencha todos os campos antes de salvar.',
+      confirmButtonColor: '#0a2a66'
+    });
+    return;
+  }
+
+  Swal.fire({
+    title: 'Salvando...',
+    text: 'Registrando FAQ institucional',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+
+    const response = await fetch("/faq", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      credentials:"include",
+      body: JSON.stringify({ pergunta, resposta })
+    });
+
+    const data = await response.json();
+    Swal.close();
+
+    if(response.ok){
+
+      form.reset();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'FAQ cadastrado com sucesso!',
+        html: '<b>O que deseja fazer agora?</b>',
+        showCancelButton: true,
+        confirmButtonText: '➕ Novo FAQ',
+        cancelButtonText: '🏠 Voltar ao Painel',
+        confirmButtonColor: '#0a2a66',
+        cancelButtonColor: '#6c757d',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          document.getElementById("pergunta").focus();
+        } else {
+          window.location.href = "/painel/";
+        }
+      });
+
+    } else {
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro ao salvar',
+        text: data.error || 'Tente novamente.',
+        confirmButtonColor: '#0a2a66'
+      });
+
+    }
+
+  } catch {
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro de conexão',
+      text: 'Não foi possível comunicar com o servidor.',
+      confirmButtonColor: '#0a2a66'
+    });
+
+  }
+});
+
+</script>
+
+</body>
+</html>

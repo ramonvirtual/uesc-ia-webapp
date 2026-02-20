@@ -8,6 +8,10 @@
 
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<meta name="description" content="Sistema institucional oficial de consulta acadêmica do curso de Ciência da Computação da UESC">
+<meta name="theme-color" content="#0a2a66">
+
 </head>
 
 <body>
@@ -26,11 +30,16 @@
   </div>
 
 <div class="header-actions">
-  <a href="https://colcic.uesc.br/" target="_blank" class="badge-link">
-    🏛 Site Oficial do COLCIC
+  <a 
+    href="https://colcic.uesc.br/" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    class="badge-link"
+    title="Abrir site oficial do Colegiado de Ciência da Computação"
+  >
+    🏛 Sistema Oficial do COLCIC
   </a>
 </div>
-
 </header>
 
 <!-- ================= AVISO INSTITUCIONAL ================= -->
@@ -46,10 +55,10 @@
   <div class="chat-card">
 
     <!-- CHAT -->
-    <div id="chat-box" class="chat-box"></div>
+    <div id="chat-box" class="chat-box" aria-live="polite"></div>
 
     <!-- MASCOTE -->
-    <div id="mascote">
+    <div id="mascote" title="Assistente Virtual UescCIC">
       <div class="mascote-container">
         <img src="mascote.png" alt="Mascote Institucional UescCIC">
       </div>
@@ -65,25 +74,33 @@
 
   <div class="input-container">
 
+    <!-- BOTÕES ESQUERDA -->
     <div class="left-buttons">
-      <button id="voice-toggle" onclick="toggleVoice()">
+      <button id="voice-toggle" onclick="toggleVoice()" title="Ativar ou desativar voz">
         🔊 Voz ON
+      </button>
+
+      <button onclick="limparChat()" title="Limpar conversa">
+        🧹 Limpar
       </button>
     </div>
 
+    <!-- INPUT -->
     <input
       type="text"
       id="user-input"
       placeholder="Digite sua pergunta institucional..."
       aria-label="Campo de pergunta institucional"
+      autocomplete="off"
     />
 
+    <!-- ENVIAR -->
     <button class="send-btn" onclick="sendMessage()">
       Enviar
     </button>
 
-    <!-- 🔥 NOVO BOTÃO REDIRECIONAMENTO -->
-    <button class="duvida-btn" onclick="window.location.href='http://localhost:3001/duvida.html'">
+    <!-- POSTAR DÚVIDA -->
+    <button class="duvida-btn" onclick="window.location.href='duvidas.html'">
       📝 Postar Dúvida
     </button>
 
@@ -92,6 +109,15 @@
 </footer>
 
 <script src="script.js"></script>
+
+<script>
+/* limpa chat */
+function limparChat(){
+  const chat = document.getElementById("chat-box");
+  chat.innerHTML = "";
+  location.reload();
+}
+</script>
 
 </body>
 </html>

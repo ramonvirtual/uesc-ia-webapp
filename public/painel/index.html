@@ -7,7 +7,6 @@
 
 <link rel="stylesheet" href="painel.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
 </head>
 
 <body>
@@ -46,6 +45,13 @@
       <p>Atualizar base institucional (RAG + IA)</p>
     </a>
 
+    <!-- NOVO BOTÃO FAQ -->
+    <a href="/faq-admin.html" class="card destaque">
+      ❓
+      <h3>FAQ Institucional</h3>
+      <p>Cadastrar e atualizar perguntas oficiais</p>
+    </a>
+
     <a href="/" class="card">
       🤖
       <h3>Acessar Assistente Virtual</h3>
@@ -60,6 +66,25 @@
   </div>
 
 </div>
+
+<script>
+// 🔐 PROTEÇÃO DE ACESSO
+async function verificarAuth(){
+  try{
+    const res = await fetch("/verificar-auth",{
+      credentials:"include"
+    });
+
+    if(!res.ok){
+      window.location.href="/login.html";
+    }
+  }catch{
+    window.location.href="/login.html";
+  }
+}
+
+verificarAuth();
+</script>
 
 </body>
 </html>

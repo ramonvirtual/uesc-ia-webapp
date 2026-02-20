@@ -100,3 +100,17 @@ body{
   font-size:12px;
   color:#777;
 }
+
+/* Destaque FAQ */
+.card.destaque{
+  border:2px solid #ffd200;
+  background:linear-gradient(135deg,#fffbe6,#fff3b0);
+}
+
+.card.destaque h3{
+  color:#b88900;
+}
+
+.card.destaque:hover{
+  background:#fff8d1;
+}

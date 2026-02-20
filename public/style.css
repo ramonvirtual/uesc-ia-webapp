@@ -50,22 +50,16 @@ body {
 .header-text p {
   color: #555;
   font-size: 13px;
+  font-weight: 400;
 }
 
-.badge-link {
+.badge {
   background: #1f4ea8;
-  color: #fff;
+  color: white;
   padding: 8px 16px;
   border-radius: 30px;
   font-size: 12px;
   font-weight: 600;
-  text-decoration: none;
-  transition: 0.3s ease;
-}
-
-.badge-link:hover {
-  background: #163d88;
-  transform: translateY(-2px);
 }
 
 /* =====================================================
@@ -109,7 +103,9 @@ body {
   padding: 28px;
   position: relative;
   overflow: hidden;
-  color: #333;
+
+  /* 🔥 IMPORTANTE */
+  color: #333;   /* força texto escuro dentro do card */
 }
 
 /* =====================================================
@@ -122,10 +118,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding-right: 180px;
+  padding-right: 170px;
   scroll-behavior: smooth;
 }
 
+/* Scroll customizado */
 .chat-box::-webkit-scrollbar {
   width: 8px;
 }
@@ -149,12 +146,16 @@ body {
   word-wrap: break-word;
 }
 
+/* ================= USER ================= */
+
 .user {
   background: #ffd200;
   color: #000;
   align-self: flex-end;
   border-bottom-right-radius: 6px;
 }
+
+/* ================= BOT (PADRÃO) ================= */
 
 .bot {
   background: #1f4ea8;
@@ -163,15 +164,36 @@ body {
   border-bottom-left-radius: 6px;
 }
 
-/* Card institucional (boas-vindas) */
+/* ================= BOT CARD (BOAS-VINDAS / INICIAL) ================= */
+
 .message.bot {
   background: #f4f7ff;
-  color: #333;
+  color: #333;  /* 🔥 FORÇA TEXTO ESCURO */
   border-left: 4px solid #1f4ea8;
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 12px;
 }
 
 .message.bot strong {
   color: #1f4ea8;
+}
+
+/* Links */
+
+.bot a {
+  color: #ffd200;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bot a:hover {
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* =====================================================
@@ -203,6 +225,13 @@ input {
   border-radius: 14px;
   border: 1px solid #ddd;
   font-size: 14px;
+  outline: none;
+  transition: 0.3s;
+}
+
+input:focus {
+  border-color: #1f4ea8;
+  box-shadow: 0 0 0 2px rgba(31,78,168,0.15);
 }
 
 button {
@@ -211,10 +240,16 @@ button {
   border: none;
   font-weight: 600;
   cursor: pointer;
+  transition: 0.25s ease;
 }
 
 .send-btn {
   background: #ffd200;
+}
+
+.send-btn:hover {
+  background: #ffbf00;
+  transform: translateY(-1px);
 }
 
 #voice-toggle {
@@ -228,17 +263,15 @@ button {
 }
 
 /* =====================================================
-   MASCOTE (VERSÃO RESPONSIVA)
+   MASCOTE
 ===================================================== */
 
 #mascote {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 170px;
+  bottom: 25px;
+  right: 25px;
+  width: 190px;
   pointer-events: none;
-  z-index: 5;
-  transition: 0.3s ease;
 }
 
 #mascote img {
@@ -252,72 +285,19 @@ button {
   100% { transform: translateY(0px); }
 }
 
-/* =====================================================
-   TABLET
-===================================================== */
-
-@media (max-width: 1024px) {
-
-  .chat-card {
-    height: 75vh;
-  }
-
-  .chat-box {
-    padding-right: 140px;
-  }
-
-  #mascote {
-    width: 120px;
-    bottom: 15px;
-    right: 15px;
-  }
+.badge-link{
+  background:#ffd200;
+  color:#000;
+  padding:6px 12px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  text-decoration:none;
+  transition:0.2s;
+  display:inline-block;
 }
 
-/* =====================================================
-   MOBILE
-===================================================== */
-
-@media (max-width: 768px) {
-
-  .chat-card {
-    height: 80vh;
-    padding: 18px;
-  }
-
-  .chat-box {
-    padding-right: 0;
-  }
-
-  #mascote {
-    position: fixed;
-    bottom: 90px;
-    right: 15px;
-    width: 85px;
-    opacity: 0.9;
-  }
-
-  .input-container {
-    flex-direction: column;
-  }
-
-  .send-btn {
-    width: 100%;
-  }
-}
-
-/* =====================================================
-   MOBILE PEQUENO
-===================================================== */
-
-@media (max-width: 480px) {
-
-  #mascote {
-    width: 70px;
-    bottom: 100px;
-  }
-
-  .message {
-    max-width: 90%;
-    font-size: 13px;
-  }
+.badge-link:hover{
+  background:#ffbf00;
+  transform:translateY(-1px);
 }
